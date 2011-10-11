@@ -27,9 +27,9 @@ class ClassCreationTestCase(unittest.TestCase):
 class ClassCreationFailsTestCase(unittest.TestCase):
     def setUp(self):
         class Person(lcd.DataStruct):
-            first_name = lcd.Field(check=[lcd.validate.not_missing])
+            first_name = lcd.Field(check=[lcd.verify.not_missing])
             last_name  = lcd.Field()
-            dob        = lcd.Field(check=[lcd.validate.is_type(datetime.datetime, datetime.date)],
+            dob        = lcd.Field(check=[lcd.verify.is_type(datetime.datetime, datetime.date)],
                                    if_missing=datetime.date.today(),
                                    pre_dump=lambda d: d.strftime("%Y-%m-%d"), 
                                    post_load=lambda s:datetime.datetime.strptime(s,"%Y-%m-%d"))
@@ -50,9 +50,9 @@ class ClassCreationFailsTestCase(unittest.TestCase):
 class MissingValuesInDataStructTestCase(unittest.TestCase):
     def setUp(self):
         class Person(lcd.DataStruct):
-            first_name = lcd.Field(check=[lcd.validate.not_missing])
+            first_name = lcd.Field(check=[lcd.verify.not_missing])
             last_name  = lcd.Field()
-            dob        = lcd.Field(check=[lcd.validate.is_type(datetime.datetime, datetime.date)],
+            dob        = lcd.Field(check=[lcd.verify.is_type(datetime.datetime, datetime.date)],
                                    if_missing=datetime.date.today(),
                                    pre_dump=lambda d: d.strftime("%Y-%m-%d"), 
                                    post_load=lambda s:datetime.datetime.strptime(s,"%Y-%m-%d"))
@@ -73,10 +73,10 @@ class MissingValuesInDataStructTestCase(unittest.TestCase):
 class ClassDumpSchemaModificationTestCase(unittest.TestCase):
     def setUp(self):
         class ModelV1(lcd.DataStruct):
-            name = lcd.Field(check=[lcd.validate.not_missing])
+            name = lcd.Field(check=[lcd.verify.not_missing])
             temp = lcd.Field()
         class ModelV2(lcd.DataStruct):
-            name = lcd.Field(check=[lcd.validate.not_missing])
+            name = lcd.Field(check=[lcd.verify.not_missing])
         self.model_v1 = ModelV1
         self.model_v2 = ModelV2
     
@@ -87,7 +87,7 @@ class ClassLoadDumpTestCase(unittest.TestCase):
         class Person(lcd.DataStruct):
             first_name = lcd.Field()
             last_name  = lcd.Field()
-            dob        = lcd.Field(check=[lcd.validate.is_type(datetime.datetime, datetime.date)],
+            dob        = lcd.Field(check=[lcd.verify.is_type(datetime.datetime, datetime.date)],
                                    pre_dump=lambda d: d.strftime("%Y-%m-%d"), 
                                    post_load=lambda s:datetime.datetime.strptime(s,"%Y-%m-%d"))
         

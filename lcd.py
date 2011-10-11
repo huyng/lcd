@@ -5,7 +5,6 @@ verified, declarative, data structures for busy people
 
 """
 import json
-import operator
 
 class Missing:
     """
@@ -21,7 +20,11 @@ Missing = Missing()
 
 class Field(object):
     def __init__(self, check=None, if_missing=Missing,  pre_dump=None, post_load=None):
-        """Generic field  that accepts anything and returns everything, as it is, unchanged
+        """Generic field that accepts anything and returns everything, as it is, unchanged
+        
+        Inherit from this class to customize your serialization and deserialization needs
+        
+        Keyword Arguments:
         
         check      -- a list of functions of the form f(v)
                       that returns (True, None) if v is valid and
@@ -35,7 +38,7 @@ class Field(object):
         pre_dump   -- a function of the form f(v) that transforms v into
                       a value appropriate for serialization through the
                       dump function.
-        
+
         post_load  -- a function of the form f(v) that transforms v from
                       a value loaded from serialization into a type appropriate
                       for use within your app.
@@ -68,7 +71,6 @@ class Field(object):
         
     
 class DataStructMeta(type):
-
     def __new__(cls, name, bases, attrs):
         fields = {}
         colwidth = 0
@@ -82,15 +84,13 @@ class DataStructMeta(type):
         
         # modify classe's doc string to add kwargs
         fmt = "\t%%-%ss -- %%s" % colwidth
-        docs = attrs.get('__doc__', '') \
-               + "Keyword Arguments:\n\n" \
+        docs = attrs.get('__doc__', '') + "Keyword Arguments:\n\n" \
                + "\n".join([fmt % (k, v) for k,v in fields.items()])
         attrs['__doc__'] = docs
         attrs["_fields"] = fields
         
         return type.__new__(cls, name, bases, attrs)
         
-
     
 class DataStruct(object):
     __metaclass__ = DataStructMeta
@@ -117,9 +117,9 @@ class DataStruct(object):
     def load(cls, raw, loader=json.loads):
         """Loads raw json data and instantiates class using cls(**kwargs). override this as needed
         
-        Arguments:
+        Keyword Arguments:
         
-        using -- a loader deserialization function to use (default: json.loads)
+        loader -- a loader deserialization function to use (default: json.loads)
         
         """
         kwargs = loader(raw)
@@ -131,9 +131,9 @@ class DataStruct(object):
     def dump(self, dumper=json.dumps):
         """Creates raw json data from self.__dict__. override this as needed
         
-        Arguments:
+        Keyword Arguments:
         
-        using -- a dumper serialization function to use (default: json.dumps)
+        loader -- a dumper serialization function to use (default: json.dumps)
         """
         to_dump = {}
         for field_name, field in self._fields.items():
@@ -143,6 +143,7 @@ class DataStruct(object):
             to_dump[field_name] = field.pre_dump(field_value)
         return dumper(to_dump)
 
+
 class InvalidDataStructure(TypeError):
     def __init__(self, errors):
         self.errors = errors
@@ -151,22 +152,8 @@ class InvalidDataStructure(TypeError):
         return "\n%s"%pprint.pformat(self.errors)
 
 
-## checks
-def comparer_check(op, opsym):
-    def validate_builder(right):
-        def validate(left):
-            valid  = op(left,right)
-            reason = None if valid else "%s %s %s is not True " % (left,opsym,right)
-            return (valid,reason)
-        return validate
-    return validate_builder
-
-class validate:
-    is_eq  = staticmethod(comparer_check(operator.eq, "=="))
-    is_gte = staticmethod(comparer_check(operator.ge, ">="))
-    is_gt  = staticmethod(comparer_check(operator.gt, ">"))
-    is_lte = staticmethod(comparer_check(operator.le, "<="))
-    is_lt  = staticmethod(comparer_check(operator.lt, "<="))
+class verify:
+    """Standard check_functions"""
     
     @staticmethod
     def is_type(*types):
@@ -192,7 +179,8 @@ class validate:
 
 # Functions 
 def passthru(value):
-    "A utility function that returns the same value that it is given. useful as a loader/dumper"
+    """A utility function that returns the same value that it is given. Useful 
+    as a loader/dumper to get the dict rather than the serialzied string"""
     return value
 
 def dictload(value):
