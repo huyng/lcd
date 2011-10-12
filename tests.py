@@ -113,7 +113,7 @@ class NestedDataStructureTestCase(unittest.TestCase):
                 name      = lcd.Field()
                 hOffset   = lcd.Field()
                 vOffset   = lcd.Field()
-                alignment = lcd.Field()
+                # alignment = lcd.Field()
             
             text = lcd.StructField(Text)
             image = lcd.StructListField(Image)

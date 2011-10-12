@@ -4,7 +4,13 @@ lcd - load, check, dump
 verified, declarative, data structures for busy people
 
 """
-import json
+try:
+    from  cjson import decode as json_loads
+    from  cjson import encode as json_dumps
+except ImportError:
+    from  json import dumps as json_dumps
+    from  json import loads as json_loads
+
 
 
 class MissingValue:
@@ -115,7 +121,8 @@ class DataStruct(object):
         # find kwargs that don't exist in fields
         unknown_kws = set(kwargs).difference(self._fields)
         if not self._ignore_unknown_kws and len(unknown_kws) > 0:
-            raise InvalidDataStructure({"error":"__init__ got unexpected keyword arguments: %s" % list(unknown_kws)} )
+            raise InvalidDataStructure({"error": "%s.__init__ got unexpected keyword arguments: %s" % (self.__class__.__name__,list(unknown_kws)), 
+                                        "input kwargs":kwargs})
         
         errors = {}
         for field_name, field in self._fields.items():
@@ -126,10 +133,10 @@ class DataStruct(object):
             else:
                 errors[field_name] = reasons
         if errors:
-            raise InvalidDataStructure({"errors":errors, "malformed":kwargs})
+            raise InvalidDataStructure({"errors":errors, "input kwargs":kwargs})
                 
     @classmethod
-    def load(cls, raw, loader=json.loads):
+    def load(cls, raw, loader=json_loads):
         """Loads raw json data and instantiates class using cls(**kwargs). override this as needed
         
         Keyword Arguments:
@@ -141,9 +148,15 @@ class DataStruct(object):
         for field_name, field in cls._fields.items():
             if field_name in kwargs:
                 kwargs[field_name] = field.post_load(kwargs[field_name])
-        return cls(**kwargs)
+        # re-raise exception closer to cause
+        try:
+            instance = cls(**kwargs)
+        except InvalidDataStructure, e:
+            raise e
+        return instance
+
     
-    def dump(self, dumper=json.dumps):
+    def dump(self, dumper=json_dumps):
         """Creates raw json data from self.__dict__. override this as needed
         
         Keyword Arguments:
@@ -164,7 +177,7 @@ class InvalidDataStructure(TypeError):
         self.errors = errors
     def __str__(self):
         import pprint
-        return "\n%s"%pprint.pformat(self.errors)
+        return "\n\n%s"%pprint.pformat(self.errors)
 
 
 class verify:
