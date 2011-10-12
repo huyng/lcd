@@ -115,7 +115,7 @@ class DataStruct(object):
         # find kwargs that don't exist in fields
         unknown_kws = set(kwargs).difference(self._fields)
         if not self._ignore_unknown_kws and len(unknown_kws) > 0:
-            raise InvalidDataStructure("__init__ got unexpected keyword arguments: %s" % list(unknown_kws))
+            raise InvalidDataStructure({"error":"__init__ got unexpected keyword arguments: %s" % list(unknown_kws)} )
         
         errors = {}
         for field_name, field in self._fields.items():
@@ -126,7 +126,7 @@ class DataStruct(object):
             else:
                 errors[field_name] = reasons
         if errors:
-            raise InvalidDataStructure(errors)
+            raise InvalidDataStructure({"errors":errors, "malformed":kwargs})
                 
     @classmethod
     def load(cls, raw, loader=json.loads):
