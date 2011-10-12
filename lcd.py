@@ -6,20 +6,21 @@ verified, declarative, data structures for busy people
 """
 import json
 
-class Missing:
+
+class MissingValue:
     """
     The value assigned to fields if they are not loaded 
     from the raw serialized datastructures. If a field
-    is set to Missing, it will not be serialized through
+    is set to MissingValue, it will not be serialized through
     the dump function.
     """
     def __nonzero__(self):
         "Mimic the boolean behavior of NoneType"
         return False
-Missing = Missing()
+MissingValue = MissingValue()
 
 class Field(object):
-    def __init__(self, check=None, if_missing=Missing,  pre_dump=None, post_load=None):
+    def __init__(self, check=None, if_missing=MissingValue,  pre_dump=None, post_load=None):
         """Generic field that accepts anything and returns everything, as it is, unchanged
         
         Inherit from this class to customize your serialization and deserialization needs
@@ -33,7 +34,7 @@ class Field(object):
 
         if_missing -- a value to assign to the attribute if the attribute
                       is not provided during the model's instantiation
-                      (default: lcd.Missing).
+                      (default: lcd.MissingValue).
         
         pre_dump   -- a function of the form f(v) that transforms v into
                       a value appropriate for serialization through the
@@ -68,7 +69,18 @@ class Field(object):
 
     def __repr__(self):
         return self.__class__.__name__
+
+class StructField(Field):
+    def __init__(self, datastruct, check=None, if_missing=MissingValue):
+        Field.__init__(self,check=check, if_missing=if_missing, pre_dump=struct_dictdump(datastruct), post_load=struct_dictload(datastruct))
         
+class StructListField(Field):
+    def __init__(self, datastruct, check=None, if_missing=MissingValue):
+        Field.__init__(self,check=check, if_missing=if_missing, pre_dump=list_of_structs_dictdump(datastruct), post_load=list_of_structs_dictload(datastruct))
+
+
+
+           
     
 class DataStructMeta(type):
     def __new__(cls, name, bases, attrs):
@@ -95,11 +107,14 @@ class DataStructMeta(type):
 class DataStruct(object):
     __metaclass__ = DataStructMeta
     
+    # set this to true if you want to ignore unknown kws when initializating
+    _ignore_unknown_kws = False
+    
     def __init__(self, **kwargs):
         """Instantiates and validates datastructure using kwargs defined above"""
         # find kwargs that don't exist in fields
         unknown_kws = set(kwargs).difference(self._fields)
-        if len(unknown_kws) > 0:
+        if not self._ignore_unknown_kws and len(unknown_kws) > 0:
             raise InvalidDataStructure("__init__ got unexpected keyword arguments: %s" % list(unknown_kws))
         
         errors = {}
@@ -138,7 +153,7 @@ class DataStruct(object):
         to_dump = {}
         for field_name, field in self._fields.items():
             field_value = getattr(self, field_name)
-            if field_value == Missing:
+            if field_value == MissingValue:
                 continue
             to_dump[field_name] = field.pre_dump(field_value)
         return dumper(to_dump)
@@ -165,7 +180,7 @@ class verify:
          
     @staticmethod
     def not_missing(appvalue):
-        valid = appvalue != Missing
+        valid = appvalue != MissingValue
         reason = None if valid else "value is missing"
         return (valid, reason)
     
@@ -190,3 +205,26 @@ def dictload(value):
 def dictdump(value):
     assert isinstance(value,dict)
     return passthru(value)
+
+def struct_dictload(datastruct):
+    def loader(value):
+        return datastruct.load(value, loader=dictload)
+    return loader
+
+def struct_dictdump(datastruct):
+    def dumper(value):
+        return value.dump(dumper=dictdump)
+    return dumper
+
+def list_of_structs_dictload(datastruct):
+    def loader(value):
+        return [datastruct.load(item, loader=dictload) for item in value]
+    return loader
+
+def list_of_structs_dictdump(datastruct):
+    def dumper(value):
+        return [item.dump(dumper=dictdump) for item in value]
+    return dumper
+
+
+
