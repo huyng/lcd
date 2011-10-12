@@ -12,7 +12,6 @@ except ImportError:
     from  json import loads as json_loads
 
 
-
 class MissingValue:
     """
     The value assigned to fields if they are not loaded 
@@ -205,7 +204,7 @@ class verify:
             return (valid, reason)
         return validate
 
-# Functions 
+# Dumpers and Loaders 
 def passthru(value):
     """A utility function that returns the same value that it is given. Useful 
     as a loader/dumper to get the dict rather than the serialzied string"""
