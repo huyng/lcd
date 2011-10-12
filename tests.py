@@ -113,7 +113,7 @@ class NestedDataStructureTestCase(unittest.TestCase):
                 name      = lcd.Field()
                 hOffset   = lcd.Field()
                 vOffset   = lcd.Field()
-                # alignment = lcd.Field()
+                alignment = lcd.Field()
             
             text = lcd.StructField(Text)
             image = lcd.StructListField(Image)
@@ -138,7 +138,7 @@ class ClassDumpSchemaModificationTestCase(unittest.TestCase):
             name = lcd.Field(check=[lcd.verify.not_missing])
             temp = lcd.Field()
         class ModelV2(lcd.DataStruct):
-            # _ignore_unknown_kws = True
+            _ignore_unknown_kws = True
             name = lcd.Field(check=[lcd.verify.not_missing])
         self.model_v1 = ModelV1
         self.model_v2 = ModelV2
